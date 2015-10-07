@@ -5,14 +5,38 @@
 #include <string.h>
 #include <unistd.h>
 
+void configure_gpio();
+int config_serial(char * device, unsigned int baudrate);
+
+int main(int argc, char** argv) {
+  configure_gpio();
+
+  int fd;
+  char a;
+  if(argc<2){
+    printf("Usage: ./serial <char>");
+    return 0;
+  }fd = config_serial("/dev/ttyAMA0", B9600);
+  if(fd<0){
+    return 0;
+  }
+  // send a byte/char received to the configured interface (serial)
+  a = argv[1][0];
+  write(fd, &a, 1);
+  // receive the byte from this interface
+  read(fd, &a, 1);
+  printf("%c\n", a);
+  close(fd);
+  return 0;
+}
+
 // device configuration function
-int config_serial(char * device, unsigned int baudrate){
+int config_serial(char * device, unsigned int baudrate) {
 	struct termios options;
 	int fd;
 
 	fd = open(device, O_RDWR | O_NOCTTY | O_NDELAY );
-	if (fd < 0)
-	{
+	if (fd < 0) {
 		/*
 		 * Could not open the port.
 		 */
@@ -66,22 +90,23 @@ int config_serial(char * device, unsigned int baudrate){
 
 	return fd;
 }
-int main(int argc, char** argv){
-	int fd;
-	char a;
-	if(argc<2){
-		printf("Usage: ./serial <char>");
-		return 0;
-	}fd = config_serial("/dev/ttyAMA0", B9600);
-	if(fd<0){
-		return 0;
-	}
-	// send a byte/char received to the configured interface (serial)
-	a = argv[1][0];
-	write(fd, &a, 1);
-	// receive the byte from this interface
-	read(fd, &a, 1);
-	printf("%c\n", a);
-	close(fd);
-	return 0;
+
+void configure_gpio() {
+  char buff[100];
+  int i;
+  FILE* p_file;
+  for(i = 23; i <= 25; i++) {
+    // Enable pin
+    p_file = fopen("/sys/class/gpio/export" , "w");
+    sprintf(buff, "%d", i);
+    fputs(buff, p_file);
+    fclose(p_file);
+
+    // Set pin mode to output
+    sprintf(buff, "/sys/class/gpio/gpio%i/direction" , i);
+    p_file = fopen(buff, "w");
+    strcpy(buff, "in");
+    fputs(buff, p_file);
+    fclose(p_file);
+  }
 }
