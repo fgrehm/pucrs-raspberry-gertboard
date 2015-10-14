@@ -10,17 +10,28 @@ int config_serial(char * device, unsigned int baudrate);
 int button_pressed(int button);
 
 int main(int argc, char** argv) {
-  int click_counts[3];
+  int click_counts[3] = {0, 0, 0};
   int i;
 
   config_gpio();
 
   while (1) {
+    int some_button_pressed = 0;
     for (i = 0; i < 3; i++) {
       if (!button_pressed(i)) continue;
+
       printf("Pressed %d\n", i);
+      click_counts[i]++;
+      some_button_pressed = 1;
     }
-    usleep(250000);
+    // HACK: It takes some time for the arduino to clear the value
+    if (some_button_pressed) {
+      printf("B1: %d\n", click_counts[0]);
+      printf("B2: %d\n", click_counts[1]);
+      printf("B3: %d\n", click_counts[2]);
+      usleep(600000);
+    } else
+      usleep(200000);
   }
 
   int fd;
@@ -127,7 +138,7 @@ int button_pressed(int button) {
   char buff[100];
   sprintf(buff, "/sys/class/gpio/gpio%i/value", 25 - button);
   FILE* p_file = fopen(buff , "r");
-  fgets (buff, 10, p_file);
-  fclose (p_file);
+  fgets(buff, 10, p_file);
+  fclose(p_file);
   return buff[0] == '0';
 }
