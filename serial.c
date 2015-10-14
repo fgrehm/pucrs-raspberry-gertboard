@@ -5,11 +5,23 @@
 #include <string.h>
 #include <unistd.h>
 
-void configure_gpio();
+void config_gpio();
 int config_serial(char * device, unsigned int baudrate);
+int button_pressed(int button);
 
 int main(int argc, char** argv) {
-  configure_gpio();
+  int click_counts[3];
+  int i;
+
+  config_gpio();
+
+  while (1) {
+    for (i = 0; i < 3; i++) {
+      if (!button_pressed(i)) continue;
+      printf("Pressed %d\n", i);
+    }
+    usleep(250000);
+  }
 
   int fd;
   char a;
@@ -91,22 +103,31 @@ int config_serial(char * device, unsigned int baudrate) {
 	return fd;
 }
 
-void configure_gpio() {
+void config_gpio() {
   char buff[100];
   int i;
   FILE* p_file;
   for(i = 23; i <= 25; i++) {
     // Enable pin
-    p_file = fopen("/sys/class/gpio/export" , "w");
+    p_file = fopen("/sys/class/gpio/export", "w");
     sprintf(buff, "%d", i);
     fputs(buff, p_file);
     fclose(p_file);
 
     // Set pin mode to output
-    sprintf(buff, "/sys/class/gpio/gpio%i/direction" , i);
+    sprintf(buff, "/sys/class/gpio/gpio%i/direction", i);
     p_file = fopen(buff, "w");
     strcpy(buff, "in");
     fputs(buff, p_file);
     fclose(p_file);
   }
+}
+
+int button_pressed(int button) {
+  char buff[100];
+  sprintf(buff, "/sys/class/gpio/gpio%i/value", 25 - button);
+  FILE* p_file = fopen(buff , "r");
+  fgets (buff, 10, p_file);
+  fclose (p_file);
+  return buff[0] == '0';
 }
