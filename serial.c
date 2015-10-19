@@ -12,108 +12,93 @@ int button_pressed(int button);
 int main(int argc, char** argv) {
   int click_counts[3] = {0, 0, 0};
   int i;
+  int fd;
 
   config_gpio();
 
   while (1) {
-    int some_button_pressed = 0;
+    int button_pressed = -1;
     for (i = 0; i < 3; i++) {
       if (!button_pressed(i)) continue;
-
-      printf("Pressed %d\n", i);
+      printf("Pressed %d\n", i+1);
       click_counts[i]++;
-      some_button_pressed = 1;
+      button_pressed = i;
     }
-    // HACK: It takes some time for the arduino to clear the value
-    if (some_button_pressed) {
-      printf("B1: %d\n", click_counts[0]);
-      printf("B2: %d\n", click_counts[1]);
-      printf("B3: %d\n", click_counts[2]);
-      usleep(600000);
-    } else
-      usleep(200000);
-  }
+    if (button_pressed == -1) {
+      sleep(1);
+      continue;
+    }
 
-  int fd;
-  char a;
-  if(argc<2){
-    printf("Usage: ./serial <char>");
-    return 0;
-  }fd = config_serial("/dev/ttyAMA0", B9600);
-  if(fd<0){
-    return 0;
+    printf("==> Button %d pressed %d time(s)\n", button_pressed+1, click_counts[button_pressed]);
+
+    fd = config_serial("/dev/ttyAMA0", B9600);
+    if (fd < 0) {
+      printf("Error configuring serial device\n");
+      return -1;
+    }
+
+    unsigned char msg = (unsigned char)button_pressed;
+    write(fd, &msg, 1);
+
+    msg = (unsigned char)click_counts[button_pressed];
+    write(fd, &msg, 1);
+
+    read(fd, &msg, 1);
+    printf("%c\n", msg);
+    close(fd);
   }
-  // send a byte/char received to the configured interface (serial)
-  a = argv[1][0];
-  write(fd, &a, 1);
-  // receive the byte from this interface
-  read(fd, &a, 1);
-  printf("%c\n", a);
-  close(fd);
-  return 0;
 }
 
 // device configuration function
 int config_serial(char * device, unsigned int baudrate) {
-	struct termios options;
-	int fd;
-
-	fd = open(device, O_RDWR | O_NOCTTY | O_NDELAY );
-	if (fd < 0) {
-		/*
-		 * Could not open the port.
-		 */
-
-		perror("config_serial: Não pode abrir a serial - ");
-		return -1;
-	}
-
-	fcntl(fd, F_SETFL, 0);
-	/*
-	 * Get the current options for the port...
-	 */
-	tcgetattr(fd, &options);
-
-	/* sets the terminal to something like the "raw" mode */
-	cfmakeraw(&options);
-
-	/*
-	 * Set the baudrate...
-	 */
-	cfsetispeed(&options, baudrate);
-	cfsetospeed(&options, baudrate);
-	/*
-	 * Enable the receiver and set local mode...
-	 */
-	options.c_cflag |= (CLOCAL | CREAD);
-
-	/*
-	 * No parit, 1 stop bit, size 8
-	 */
-	options.c_cflag &= ~PARENB;
-	options.c_cflag &= ~CSTOPB;
-	options.c_cflag &= ~CSIZE;
-	options.c_cflag |= CS8;
-
-	/*
-	 * Clear old settings
-	 */
-	options.c_cflag &= ~CRTSCTS;
-	options.c_iflag &= ~(IXON | IXOFF | IXANY);
-
-	/* non-caninical mode */
-	options.c_lflag &= ~ICANON;
-	/*
-	 * Set the new options for the port...
-	 */
-	tcsetattr(fd, TCSANOW, &options);
-
-	/* configura a tty para escritas e leituras não bloqueantes */
-	//fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK);
-
-	return fd;
+  struct termios options;
+  int fd;
+  fd = open(device, O_RDWR | O_NOCTTY | O_NDELAY );
+  if (fd < 0) {
+    /*
+     * Could not open the port.
+     */
+    perror("config_serial: Não pode abrir a serial - ");
+    return -1;
+  }
+  fcntl(fd, F_SETFL, 0);
+  /*
+   * Get the current options for the port...
+   */
+  tcgetattr(fd, &options);
+  /* sets the terminal to something like the "raw" mode */
+  cfmakeraw(&options);
+  /*
+   * Set the baudrate...
+   */
+  cfsetispeed(&options, baudrate);
+  cfsetospeed(&options, baudrate);
+  /*
+   * Enable the receiver and set local mode...
+   */
+  options.c_cflag |= (CLOCAL | CREAD);
+  /*
+   * No parit, 1 stop bit, size 8
+   */
+  options.c_cflag &= ~PARENB;
+  options.c_cflag &= ~CSTOPB;
+  options.c_cflag &= ~CSIZE;
+  options.c_cflag |= CS8;
+  /*
+   * Clear old settings
+   */
+  options.c_cflag &= ~CRTSCTS;
+  options.c_iflag &= ~(IXON | IXOFF | IXANY);
+  /* non-caninical mode */
+  options.c_lflag &= ~ICANON;
+  /*
+   * Set the new options for the port...
+   */
+  tcsetattr(fd, TCSANOW, &options);
+  /* configura a tty para escritas e leituras não bloqueantes */
+  //fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK);
+  return fd;
 }
-
 void config_gpio() {
   char buff[100];
   int i;
@@ -124,7 +109,6 @@ void config_gpio() {
     sprintf(buff, "%d", i);
     fputs(buff, p_file);
     fclose(p_file);
-
     // Set pin mode to output
     sprintf(buff, "/sys/class/gpio/gpio%i/direction", i);
     p_file = fopen(buff, "w");
@@ -133,7 +117,6 @@ void config_gpio() {
     fclose(p_file);
   }
 }
-
 int button_pressed(int button) {
   char buff[100];
   sprintf(buff, "/sys/class/gpio/gpio%i/value", 25 - button);
