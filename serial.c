@@ -7,7 +7,7 @@
 
 void config_gpio();
 int config_serial(char * device, unsigned int baudrate);
-int button_pressed(int button);
+int button_was_pressed(int button);
 
 int main(int argc, char** argv) {
   int click_counts[3] = {0, 0, 0};
@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
   while (1) {
     int button_pressed = -1;
     for (i = 0; i < 3; i++) {
-      if (!button_pressed(i)) continue;
+      if (!button_was_pressed(i)) continue;
       printf("Pressed %d\n", i+1);
       click_counts[i]++;
       button_pressed = i;
@@ -117,7 +117,7 @@ void config_gpio() {
     fclose(p_file);
   }
 }
-int button_pressed(int button) {
+int button_was_pressed(int button) {
   char buff[100];
   sprintf(buff, "/sys/class/gpio/gpio%i/value", 25 - button);
   FILE* p_file = fopen(buff , "r");
