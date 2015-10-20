@@ -1,5 +1,5 @@
 # Based on http://stackoverflow.com/a/1484873
-TARGET = serial
+TARGET = app
 LIBS = -pthread
 CC = gcc
 CFLAGS = -Wall
