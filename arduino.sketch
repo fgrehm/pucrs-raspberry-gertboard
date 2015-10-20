@@ -5,15 +5,15 @@ void setup() {
   for (int i = 0; i < 4; i++) {
     pinMode(BASE_PIN + i, OUTPUT);
   }
-}
-
-void loop() {
-  int button, clicks;
-
+  
   // Apaga todos os LEDs
   for (int i = 0; i < 4; i++) {
     digitalWrite(BASE_PIN + i, LOW);
   }
+}
+
+void loop() {
+  int button, clicks;
 
   // Aguarda o recebimento de dados
   if (Serial.available() >= 2) {
