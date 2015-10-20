@@ -1,41 +1,43 @@
+int BASE_PIN = 2;
+
 void setup() {
   Serial.begin(9600);
-  pinMode(10, OUTPUT);
-  pinMode(11, OUTPUT);
-  pinMode(12, OUTPUT);
-  pinMode(13, OUTPUT);
+  for (int i = 0; i < 4; i++) {
+    pinMode(BASE_PIN + i, OUTPUT);
+  }
 }
 
 void loop() {
-  int button, clicks, i;
+  int button, clicks;
 
   // Apaga todos os LEDs
-  for (i = 0; i < 4; i++)
-    digitalWrite(10 + i, LOW);
+  for (int i = 0; i < 4; i++) {
+    digitalWrite(BASE_PIN + i, LOW);
+  }
 
   // Aguarda o recebimento de dados
-  if (Serial.available()) {
+  if (Serial.available() >= 2) {
     // Lê mensagem enviada
     button = Serial.read();
     clicks = Serial.read();
 
-    // Informa qual botao foi pressionado através do LED 10
-    blink(10, button+1);
+    // Informa qual botao foi pressionado através do LED 9
+    blink(BASE_PIN, button+1);
     // Quantidade de vezes que o botão foi pressionado
-    blink(10+button+1, clicks);
+    blink(BASE_PIN+button+1, clicks);
 
     // Informa que mensagem foi processada corretamente
-    Serial.write(0);
+    Serial.print(button, DEC);
+    Serial.print(" ");
+    Serial.println(clicks, DEC);
   }
 }
 
 void blink(int ledNumber, int times) {
-  int i;
-
-  for (i = 0; i < times; i++) {
+  for (int i = 0; i < times; i++) {
     digitalWrite(ledNumber, HIGH);
     delay(800);
     digitalWrite(ledNumber, LOW);
-    delay(200);
+    delay(300);
   }
 }
