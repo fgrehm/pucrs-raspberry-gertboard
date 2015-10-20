@@ -25,7 +25,7 @@ int main(int argc, char** argv) {
       button_pressed = i;
     }
     if (button_pressed == -1) {
-      sleep(1);
+      usleep(200000);
       continue;
     }
 
@@ -43,8 +43,9 @@ int main(int argc, char** argv) {
     msg = (unsigned char)click_counts[button_pressed];
     write(fd, &msg, 1);
 
-    read(fd, &msg, 1);
-    printf("%c\n", msg);
+    char ret[11];
+    read(fd, &ret, 11);
+    printf("%s\n", ret);
     close(fd);
   }
 }
@@ -99,6 +100,7 @@ int config_serial(char * device, unsigned int baudrate) {
   //fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK);
   return fd;
 }
+
 void config_gpio() {
   char buff[100];
   int i;
@@ -117,6 +119,7 @@ void config_gpio() {
     fclose(p_file);
   }
 }
+
 int button_was_pressed(int button) {
   char buff[100];
   sprintf(buff, "/sys/class/gpio/gpio%i/value", 25 - button);
