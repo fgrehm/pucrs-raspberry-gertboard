@@ -29,7 +29,7 @@ void loop() {
   }
 }
 
-void blink(ledNumber, times) {
+void blink(int ledNumber, int times) {
   int i;
 
   for (i = 0; i < times; i++) {
