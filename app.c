@@ -20,7 +20,6 @@ int main(int argc, char** argv) {
     int button_pressed = -1;
     for (i = 0; i < 3; i++) {
       if (!button_was_pressed(i)) continue;
-      printf("Pressed %d\n", i+1);
       click_counts[i]++;
       button_pressed = i;
     }
@@ -43,9 +42,9 @@ int main(int argc, char** argv) {
     msg = (unsigned char)click_counts[button_pressed];
     write(fd, &msg, 1);
 
-    char ret[11];
-    read(fd, &ret, 11);
-    printf("%s\n", ret);
+    char resp[21];
+    read(fd, &resp, 21);
+    printf("==> Arduino response: \n\t%s", resp);
     close(fd);
   }
 }
